@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>给你的小宇宙</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100%;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: linear-gradient(135deg, #fdeff9, #ecf2ff);
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      max-width: 700px;
+      width: 90%;
+      margin: 10vh auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 40px 30px;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    h2 {
+      color: #e26a8d;
+      margin-bottom: 25px;
+      font-size: 28px;
+    }
+
+    .message {
+      font-size: 18px;
+      line-height: 1.8;
+      min-height: 100px;
+      margin-bottom: 30px;
+      transition: opacity 0.4s ease;
+      white-space: pre-line;
+    }
+
+    .footer {
+      margin-top: 30px;
+      text-align: right;
+      font-style: italic;
+      color: #888;
+    }
+
+    button {
+      background: #e26a8d;
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      font-size: 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #e26a8d;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 10px #e26a8d; }
+      50% { box-shadow: 0 0 20px #e26a8d; }
+      100% { box-shadow: 0 0 10px #e26a8d; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="hearts"></canvas>
+
+<div class="card">
+  <h2>送你一颗颗会飞的小心心</h2>
+  <div class="message" id="message"></div>
+  <button onclick="showRandomMessage()">再听一句 🌸</button>
+  <div class="footer">—— 想陪你一直慢慢走的人</div>
+</div>
+
+<script>
+  const messages = [
+    "考试失败不是终点，\n只是成长里温柔的一次转弯。",
+    "你不是成绩，\n你是认真努力、发光发亮的你。",
+    "你可以难过，\n但别怀疑自己。",
+    "我知道你已经很尽力了，\n真的。",
+    "没有关系，\n不完美的人生也值得被拥抱。",
+    "我一直都觉得，\n你很了不起。",
+    "换个方向努力吧，\n我陪你。",
+    "你是温柔本身，\n世界迟早会懂你。"
+  ];
+
+  let index = -1;
+  const messageEl = document.getElementById("message");
+
+  function showRandomMessage() {
+    let next;
+    do {
+      next = Math.floor(Math.random() * messages.length);
+    } while (next === index);
+    index = next;
+    typeText(messages[next]);
+  }
+
+  function typeText(text) {
+    messageEl.innerText = '';
+    let i = 0;
+    function type() {
+      if (i < text.length) {
+        messageEl.innerText += text[i++];
+        setTimeout(type, 40);
+      }
+    }
+    type();
+  }
+
+  // 初始显示一条
+  showRandomMessage();
+
+  // ❤️ 爱心粒子背景特效
+  const canvas = document.getElementById("hearts");
+  const ctx = canvas.getContext("2d");
+  let width, height;
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const hearts = Array.from({ length: 60 }, () => ({
+    x: Math.random() * width,
+    y: Math.random() * height,
+    size: Math.random() * 6 + 4,
+    speed: Math.random() * 1 + 0.5,
+    dx: Math.random() * 1 - 0.5,
+    color: `rgba(255, ${100 + Math.random()*155}, ${150 + Math.random()*100}, 0.8)`
+  }));
+
+  function drawHearts() {
+    ctx.clearRect(0, 0, width, height);
+    hearts.forEach(h => {
+      ctx.beginPath();
+      ctx.moveTo(h.x, h.y);
+      ctx.bezierCurveTo(h.x - h.size / 2, h.y - h.size / 2, h.x - h.size, h.y + h.size / 3, h.x, h.y + h.size);
+      ctx.bezierCurveTo(h.x + h.size, h.y + h.size / 3, h.x + h.size / 2, h.y - h.size / 2, h.x, h.y);
+      ctx.fillStyle = h.color;
+      ctx.fill();
+      h.y -= h.speed;
+      h.x += h.dx;
+      if (h.y < -10) h.y = height + 10;
+      if (h.x < -10) h.x = width + 10;
+      if (h.x > width + 10) h.x = -10;
+    });
+    requestAnimationFrame(drawHearts);
+  }
+  drawHearts();
+</script>
+
+</body>
+</html>
