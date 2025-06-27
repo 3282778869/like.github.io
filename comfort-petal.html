@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>给你的一封温柔信</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nanum+Brush+Script&display=swap');
+
+  html, body {
+    margin: 0; padding: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #f9d6e3, #c8a2c8);
+    font-family: 'Nanum Brush Script', cursive;
+    color: #4b1e48;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  .container {
+    background: rgba(255, 255, 255, 0.85);
+    padding: 40px 35px;
+    border-radius: 25px;
+    max-width: 600px;
+    box-shadow: 0 10px 25px rgba(107, 61, 121, 0.35);
+    text-align: center;
+    position: relative;
+    z-index: 10;
+  }
+
+  h1 {
+    margin-bottom: 25px;
+    font-size: 46px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  .message {
+    font-size: 26px;
+    line-height: 1.7;
+    min-height: 140px;
+    opacity: 0;
+    transition: opacity 1.5s ease;
+    white-space: pre-line;
+  }
+
+  .message.show {
+    opacity: 1;
+  }
+
+  button {
+    margin-top: 35px;
+    background: #b978b9;
+    border: none;
+    padding: 14px 36px;
+    border-radius: 40px;
+    color: white;
+    font-size: 19px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 0 12px #9b58a2cc;
+    transition: background-color 0.4s ease;
+  }
+
+  button:hover {
+    background: #9b58a2;
+  }
+
+  .footer {
+    margin-top: 28px;
+    font-size: 17px;
+    color: #7a4a7a;
+    font-style: italic;
+  }
+
+  canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="petals"></canvas>
+
+<div class="container">
+  <h1>亲爱的，给你的一封温柔信</h1>
+  <div class="message" id="message"></div>
+  <button id="nextBtn">下一句</button>
+  <div class="footer">—— 慢慢地，你会看到更美的自己</div>
+</div>
+
+<audio id="bgm" src="https://cdn.pixabay.com/download/audio/2023/03/28/audio_40654f931e.mp3?filename=romantic-piano-144186.mp3" autoplay loop></audio>
+
+<script>
+  const messages = [
+    "考试的失利，\n只是旅途中一朵短暂的乌云。",
+    "请给自己时间，\n让心情像春风一样温柔地抚平。",
+    "不必急着定义成功，\n成长往往藏在每一次跌倒后。",
+    "你付出的努力，\n终将在未来某天开出灿烂的花朵。",
+    "别害怕失败，\n它是你通往光明的桥梁。",
+    "失意的时刻，\n也是你认识自己的时刻。",
+    "微笑面对生活，\n你会发现坚强其实很美。",
+    "慢慢走，别急，\n星光会指引你前行。",
+    "未来有无限可能，\n就像夜空中闪烁的星辰。",
+    "请相信，\n你比你想象的更坚韧、更美好。",
+    "放下焦虑和担忧，\n让自己心灵轻盈自在。",
+    "失败只是过程，\n而你，是故事的主角。",
+    "你拥有温暖的力量，\n足以拥抱整个世界。",
+    "每一次跌倒，\n都是向未来迈出的一小步。",
+    "请不要放弃，\n你值得拥有最美的明天。",
+    "给自己一个微笑，\n迎接新一天的阳光。",
+    "那份努力和坚持，\n终将为你铺出星光大道。",
+    "让心灵拥抱宁静，\n你会更有力量前行。",
+    "我在这里，\n陪你走过每一个春夏秋冬。",
+    "你是温柔的勇士，\n一切都会好起来的。"
+  ];
+
+  const messageEl = document.getElementById('message');
+  const btn = document.getElementById('nextBtn');
+  let index = 0;
+
+  function showMessage(i) {
+    messageEl.classList.remove('show');
+    setTimeout(() => {
+      messageEl.textContent = messages[i];
+      messageEl.classList.add('show');
+    }, 600);
+  }
+
+  btn.addEventListener('click', () => {
+    index = (index + 1) % messages.length;
+    showMessage(index);
+  });
+
+  showMessage(index);
+
+  // 花瓣飘落效果
+  const canvas = document.getElementById('petals');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  class Petal {
+    constructor() {
+      this.x = Math.random() * width;
+      this.y = Math.random() * height;
+      this.size = 15 + Math.random() * 10;
+      this.speedY = 0.5 + Math.random() * 1.2;
+      this.speedX = Math.random() * 0.6 - 0.3;
+      this.angle = Math.random() * Math.PI * 2;
+      this.spinSpeed = 0.01 + Math.random() * 0.03;
+      this.opacity = 0.7 + Math.random() * 0.3;
+    }
+
+    update() {
+      this.y += this.speedY;
+      this.x += this.speedX;
+      this.angle += this.spinSpeed;
+
+      if (this.y > height + this.size) {
+        this.y = -this.size;
+        this.x = Math.random() * width;
+      }
+      if (this.x > width + this.size) {
+        this.x = -this.size;
+      } else if (this.x < -this.size) {
+        this.x = width + this.size;
+      }
+    }
+
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.fillStyle = `rgba(255, 192, 203, ${this.opacity})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size * 0.6, this.size * 0.4, 0, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  const petals = [];
+  for(let i = 0; i < 60; i++) {
+    petals.push(new Petal());
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height);
+    petals.forEach(petal => {
+      petal.update();
+      petal.draw();
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+
+  // 点击时产生花瓣加速飘落
+  document.body.addEventListener('click', () => {
+    petals.forEach(petal => {
+      petal.speedY += 0.5;
+      petal.speedX += (Math.random() - 0.5) * 0.6;
+    });
+    setTimeout(() => {
+      petals.forEach(petal => {
+        petal.speedY = Math.max(0.5, petal.speedY - 0.5);
+      });
+    }, 1200);
+  });
+
+  // 背景音乐自动播放兼容
+  window.addEventListener('click', () => {
+    const audio = document.getElementById("bgm");
+    if (audio.paused) {
+      audio.play().catch(() => {});
+    }
+  });
+</script>
+
+</body>
+</html>
