@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>嗨皮激励站🎉</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
+
+  html, body {
+    margin: 0; padding: 0;
+    height: 100%;
+    background: #fffae3;
+    overflow: hidden;
+    font-family: 'Comic Neue', cursive, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    color: #ff4d6d;
+  }
+
+  .container {
+    background: #fff0f6cc;
+    border: 5px dashed #ff4d6d;
+    padding: 40px 50px;
+    border-radius: 30px;
+    max-width: 700px;
+    text-align: center;
+    box-shadow: 0 0 20px #ff4d6d99;
+    position: relative;
+    z-index: 10;
+  }
+
+  h1 {
+    font-size: 50px;
+    margin-bottom: 30px;
+    color: #ff4d6d;
+    text-shadow: 2px 2px #ffa3b1;
+    animation: bounce 1.8s ease infinite alternate;
+  }
+
+  .message {
+    font-size: 26px;
+    min-height: 150px;
+    line-height: 1.5;
+    margin-bottom: 40px;
+    color: #ff4d6dcc;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  .message.show {
+    opacity: 1;
+  }
+
+  button {
+    background: #ff4d6d;
+    border: none;
+    color: white;
+    font-weight: 900;
+    font-size: 22px;
+    padding: 14px 45px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow:
+      0 0 15px #ff4d6d,
+      0 0 25px #ff85a2;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  button:hover {
+    background: #ff6691;
+    transform: scale(1.1);
+  }
+
+  @keyframes bounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-20px); }
+  }
+
+  /* 闪烁霓虹线条背景 */
+  #neon-lines {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .balloon, .star {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+  }
+
+</style>
+</head>
+<body>
+
+<canvas id="neon-lines"></canvas>
+
+<div class="container">
+  <h1>嗨起来！🎉</h1>
+  <div class="message" id="message"></div>
+  <button id="nextBtn">来点开心的！</button>
+</div>
+
+<audio id="bgm" src="https://cdn.pixabay.com/download/audio/2022/03/26/audio_63dff3c53c.mp3?filename=party-funk-15387.mp3" autoplay loop></audio>
+
+<script>
+  // --- 文案 ---
+  const messages = [
+    "考试没过？别慌！人生的舞台还长着呢，跳起来！🕺",
+    "失败是成功的前奏曲，先来段尬舞热热场！💃",
+    "分数低？没事，你可是生活的蹦床高手！🤸‍♀️",
+    "考试挂科算啥，重点是你有颗会嗨的心！🎈",
+    "输了没关系，笑着狂欢才是王道！😄",
+    "你的人生是派对，没通过这场考试，换个舞曲继续嗨！🎶",
+    "别灰心，人生就是一场五彩缤纷的彩虹糖！🍬",
+    "失败的时候，别忘了给自己来个疯狂自拍！🤳",
+    "考试不理想？那就开个小派对庆祝，继续high！🥳",
+    "难题来了？来，喝口水，做个鬼脸，扭起来！😜",
+    "加油哦，成功的秘诀就是：嗨着前进，笑着翻盘！😆",
+    "考试丢分了？OK，人生还长，我们继续嗨皮！🌈",
+    "人生的彩蛋，就是考试挂科后的疯狂嗨唱！🎤",
+    "失败只是派对里的烟花，绚烂了又散去！🎆",
+    "别灰心，翻盘的节奏已经上了，准备燃烧吧！🔥",
+    "考试不顺？那就跳个恰恰，甩掉烦恼！💃",
+    "生活已经够严肃了，你得用嗨歌和爆米花炸裂它！🍿",
+    "每天都是party日，失败了就摇摆起来！🕺",
+    "考试失败没事，你是派对里最靓的仔！✨",
+    "笑一笑，嗨一嗨，未来肯定嗨翻天！😎"
+  ];
+
+  const messageEl = document.getElementById('message');
+  const btn = document.getElementById('nextBtn');
+  let index = 0;
+
+  function showMessage(i) {
+    messageEl.classList.remove('show');
+    setTimeout(() => {
+      messageEl.textContent = messages[i];
+      messageEl.classList.add('show');
+    }, 200);
+  }
+
+  btn.addEventListener('click', () => {
+    index = (index + 1) % messages.length;
+    showMessage(index);
+    createPopcornEffect();
+  });
+
+  showMessage(index);
+
+  // --- 霓虹闪烁线条背景 ---
+  const canvas = document.getElementById('neon-lines');
+  const ctx = canvas.getContext('2d');
+  let width, height;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const lines = [];
+  const lineCount = 20;
+
+  class NeonLine {
+    constructor() {
+      this.x = Math.random() * width;
+      this.y = Math.random() * height;
+      this.length = 200 + Math.random() * 200;
+      this.speed = 0.5 + Math.random();
+      this.offset = Math.random() * 1000;
+      this.color = `hsl(${Math.floor(Math.random()*360)}, 100%, 70%)`;
+      this.direction = Math.random() > 0.5 ? 1 : -1;
+    }
+    draw(time) {
+      const alpha = 0.5 + 0.5 * Math.sin((time + this.offset) * this.speed);
+      ctx.strokeStyle = this.color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(this.x + this.length * this.direction, this.y);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    update() {
+      this.x += this.speed * this.direction;
+      if(this.x > width + this.length) this.x = -this.length;
+      if(this.x < -this.length) this.x = width + this.length;
+    }
+  }
+
+  for(let i=0; i<lineCount; i++) {
+    lines.push(new NeonLine());
+  }
+
+  function animateLines(time=0) {
+    ctx.clearRect(0,0,width,height);
+    lines.forEach(line => {
+      line.update();
+      line.draw(time/1000);
+    });
+    requestAnimationFrame(animateLines);
+  }
+  animateLines();
+
+  // --- 彩色爆米花效果 ---
+  const popcornContainer = document.createElement('div');
+  popcornContainer.style.position = 'fixed';
+  popcornContainer.style.top = 0;
+  popcornContainer.style.left = 0;
+  popcornContainer.style.width = '100%';
+  popcornContainer.style.height = '100%';
+  popcornContainer.style.pointerEvents = 'none';
+  popcornContainer.style.zIndex = '20';
+  document.body.appendChild(popcornContainer);
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function createPopcornEffect() {
+    const count = 25;
+    for(let i=0; i<count; i++) {
+      const pop = document.createElement('div');
+      pop.textContent = '🍿';
+      pop.style.position = 'absolute';
+      pop.style.fontSize = `${randomInt(14, 28)}px`;
+      pop.style.left = `${randomInt(0, window.innerWidth)}px`;
+      pop.style.top = `${randomInt(0, window.innerHeight)}px`;
+      pop.style.opacity = '1';
+      pop.style.transition = 'all 1.5s ease-out';
+      pop.style.pointerEvents = 'none';
+
+      popcornContainer.appendChild(pop);
+
+      setTimeout(() => {
+        pop.style.transform = `translateY(-100px) translateX(${randomInt(-50,50)}px) rotate(${randomInt(-360,360)}deg) scale(0)`;
+        pop.style.opacity = '0';
+      }, 50);
+
+      setTimeout(() => {
+        popcornContainer.removeChild(pop);
+      }, 1600);
+    }
+  }
+
+  // 点击屏幕炸出爆米花
+  document.body.addEventListener('click', e => {
+    createPopcornEffect();
+  });
+
+  // 自动切换文案
+  setInterval(() => {
+    index = (index + 1) % messages.length;
+    showMessage(index);
+    createPopcornEffect();
+  }, 9000);
+
+  // 自动播放音频（用户交互后）
+  window.addEventListener('click', () => {
+    const audio = document.getElementById("bgm");
+    if(audio.paused) audio.play().catch(() => {});
+  });
+</script>
+
+</body>
+</html>
