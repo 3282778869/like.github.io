@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>给你的小宇宙</title>
+  <title>温柔的一句话</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
       height: 100%;
-      font-family: 'Georgia', 'Times New Roman', serif;
-      background: linear-gradient(135deg, #fdeff9, #ecf2ff);
+      font-family: 'Georgia', sans-serif;
+      background: radial-gradient(ellipse at top, #fce4ec, #e3f2fd);
+      user-select: none;
     }
 
     canvas {
@@ -19,15 +20,16 @@
       top: 0;
       left: 0;
       z-index: 0;
+      pointer-events: none;
     }
 
     .card {
       position: relative;
-      z-index: 1;
+      z-index: 2;
       max-width: 700px;
       width: 90%;
-      margin: 10vh auto;
-      background: rgba(255, 255, 255, 0.95);
+      margin: 12vh auto;
+      background: rgba(255, 255, 255, 0.92);
       padding: 40px 30px;
       border-radius: 16px;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
@@ -60,53 +62,65 @@
       background: #e26a8d;
       color: white;
       border: none;
-      padding: 12px 28px;
-      font-size: 16px;
+      padding: 10px 22px;
+      font-size: 15px;
       border-radius: 30px;
       cursor: pointer;
       box-shadow: 0 0 10px #e26a8d;
-      animation: pulse 2s infinite ease-in-out;
-    }
-
-    @keyframes pulse {
-      0% { box-shadow: 0 0 10px #e26a8d; }
-      50% { box-shadow: 0 0 20px #e26a8d; }
-      100% { box-shadow: 0 0 10px #e26a8d; }
+      margin: 8px;
     }
   </style>
 </head>
 <body>
 
+<canvas id="bg"></canvas>
 <canvas id="hearts"></canvas>
 
 <div class="card">
-  <h2>送你一颗颗会飞的小心心</h2>
+  <h2>一封写给你的温柔信件 💌</h2>
   <div class="message" id="message"></div>
-  <button onclick="showRandomMessage()">再听一句 🌸</button>
-  <div class="footer">—— 想陪你一直慢慢走的人</div>
+  <div>
+    <button onclick="showRandomMessage()">再听一句 🌸</button>
+  </div>
+  <div class="footer">—— 想陪你慢慢变好的人</div>
 </div>
+
+<audio id="bgm" src="https://cdn.pixabay.com/download/audio/2023/03/28/audio_40654f931e.mp3?filename=romantic-piano-144186.mp3" autoplay loop></audio>
 
 <script>
   const messages = [
     "考试失败不是终点，\n只是成长里温柔的一次转弯。",
-    "你不是成绩，\n你是认真努力、发光发亮的你。",
     "你可以难过，\n但别怀疑自己。",
-    "我知道你已经很尽力了，\n真的。",
+    "你是温柔本身，\n世界迟早会懂你。",
     "没有关系，\n不完美的人生也值得被拥抱。",
-    "我一直都觉得，\n你很了不起。",
-    "换个方向努力吧，\n我陪你。",
-    "你是温柔本身，\n世界迟早会懂你。"
+    "成绩不代表一切，\n你依然是独一无二的存在。",
+    "就算一时落后，\n也不代表你没有未来。",
+    "人生本就有起伏，\n你只是还没到属于你的高峰。",
+    "愿你不再为分数焦虑，\n为自己的努力自豪。",
+    "你所经历的一切，\n都会成为温柔的力量。",
+    "这个世界不会因为一次失败抛弃你，\n我也是。",
+    "你并不孤单，\n总有人默默为你加油。",
+    "别怕慢，\n重要的是你在走。",
+    "你值得更好的一切，\n这一次不过是过程。",
+    "你哭过的夜晚，\n会照亮你前进的方向。",
+    "你是你自己最大的光，\n别忘了。",
+    "失败并不可怕，\n放弃才是。",
+    "你不需要拿成绩证明自己的价值。",
+    "未来很远很美，\n别让一次失败困住你。",
+    "一切都会好起来的，\n请你一定要相信。",
+    "你已经很棒了，\n不要对自己太苛刻。"
   ];
 
-  let index = -1;
+  let lastIndex = -1;
+
   const messageEl = document.getElementById("message");
 
   function showRandomMessage() {
     let next;
     do {
       next = Math.floor(Math.random() * messages.length);
-    } while (next === index);
-    index = next;
+    } while (next === lastIndex);
+    lastIndex = next;
     typeText(messages[next]);
   }
 
@@ -122,10 +136,10 @@
     type();
   }
 
-  // 初始显示一条
   showRandomMessage();
+  setInterval(showRandomMessage, 10000);
 
-  // ❤️ 爱心粒子背景特效
+  // 粒子爱心背景
   const canvas = document.getElementById("hearts");
   const ctx = canvas.getContext("2d");
   let width, height;
@@ -163,6 +177,32 @@
     requestAnimationFrame(drawHearts);
   }
   drawHearts();
+
+  // 点击爱心特效
+  document.body.addEventListener('click', e => {
+    const heart = document.createElement("div");
+    heart.textContent = "💗";
+    heart.style.position = "fixed";
+    heart.style.left = e.clientX + "px";
+    heart.style.top = e.clientY + "px";
+    heart.style.fontSize = "20px";
+    heart.style.opacity = 1;
+    heart.style.transition = "all 1.2s ease";
+    document.body.appendChild(heart);
+    setTimeout(() => {
+      heart.style.top = (e.clientY - 80) + "px";
+      heart.style.opacity = 0;
+    }, 10);
+    setTimeout(() => heart.remove(), 1300);
+  });
+
+  // 自动播放音乐兼容处理
+  window.addEventListener('click', () => {
+    const audio = document.getElementById("bgm");
+    if (audio.paused) {
+      audio.play().catch(() => {});
+    }
+  });
 </script>
 
 </body>
