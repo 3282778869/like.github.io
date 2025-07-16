@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>对不起，请原谅我</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #fceabb, #f8b500);
+      font-family: "Segoe UI", sans-serif;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      animation: fadeIn 1.5s ease;
+    }
+
+    h1 {
+      font-size: 40px;
+      color: #d94141;
+      margin-bottom: 10px;
+    }
+
+    .heart {
+      font-size: 60px;
+      animation: heartbeat 1s infinite;
+      color: #e74c3c;
+    }
+
+    .card {
+      background: #fff5e6;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      max-width: 600px;
+      text-align: center;
+      margin-top: 20px;
+      line-height: 1.8;
+    }
+
+    @keyframes heartbeat {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.2);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .btn {
+      margin-top: 25px;
+      padding: 10px 20px;
+      background-color: #f08a5d;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
+    }
+
+    .btn:hover {
+      background-color: #b83b5e;
+    }
+  </style>
+</head>
+<body>
+  <div class="heart">❤️</div>
+  <h1>对不起</h1>
+  <div class="card">
+    <p>我知道有时候我不够体贴，不够冷静，甚至让你难过。</p>
+    <p>但我真的不是故意的，我只是太在乎你，太怕失去你。</p>
+    <p>你对我来说，是一束光，是我心里的柔软。</p>
+    <p>请给我一次机会，让我继续用温柔和陪伴弥补过错。</p>
+    <p>我愿意，一点点改，一点点靠近你心里最柔软的那部分。</p>
+    <button class="btn" onclick="alert('你原谅我了吗？🥺')">点击原谅我</button>
+  </div>
+</body>
+</html>
