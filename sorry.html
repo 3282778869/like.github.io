@@ -1,87 +1,155 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <title>对不起，请原谅我</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>对不起，我的宝贝</title>
   <style>
     body {
       margin: 0;
-      padding: 0;
-      background: linear-gradient(to right, #fceabb, #f8b500);
-      font-family: "Segoe UI", sans-serif;
-      color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      background: linear-gradient(to top, #ffecd2 0%, #fcb69f 100%);
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
       height: 100vh;
-      animation: fadeIn 1.5s ease;
+    }
+
+    .container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      max-width: 700px;
+      color: #4b2e2e;
+      z-index: 2;
     }
 
     h1 {
-      font-size: 40px;
-      color: #d94141;
+      font-size: 36px;
       margin-bottom: 10px;
     }
 
-    .heart {
-      font-size: 60px;
-      animation: heartbeat 1s infinite;
-      color: #e74c3c;
+    .typewriter p {
+      display: inline-block;
+      overflow: hidden;
+      border-right: .15em solid #d94f4f;
+      white-space: nowrap;
+      animation: typing 5s steps(50, end), blink .75s step-end infinite;
+      font-size: 18px;
+      max-width: 100%;
     }
 
-    .card {
-      background: #fff5e6;
-      padding: 30px 40px;
-      border-radius: 16px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-      max-width: 600px;
-      text-align: center;
-      margin-top: 20px;
-      line-height: 1.8;
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
     }
 
-    @keyframes heartbeat {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.2);
-      }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes blink {
+      50% { border-color: transparent }
     }
 
     .btn {
-      margin-top: 25px;
-      padding: 10px 20px;
-      background-color: #f08a5d;
+      margin-top: 30px;
+      padding: 12px 24px;
+      background-color: #e06666;
       color: white;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
+      border-radius: 20px;
       font-size: 16px;
-      transition: background 0.3s ease;
+      cursor: pointer;
+      transition: background 0.3s;
     }
 
     .btn:hover {
-      background-color: #b83b5e;
+      background-color: #a94442;
+    }
+
+    .hearts {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      transform: rotate(45deg);
+      animation: float 8s infinite ease-in;
+      opacity: 0.6;
+    }
+
+    .heart::before,
+    .heart::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+    }
+
+    .heart::before {
+      top: -10px;
+      left: 0;
+    }
+
+    .heart::after {
+      left: -10px;
+      top: 0;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(45deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-800px) rotate(45deg);
+        opacity: 0;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="heart">❤️</div>
-  <h1>对不起</h1>
-  <div class="card">
-    <p>我知道有时候我不够体贴，不够冷静，甚至让你难过。</p>
-    <p>但我真的不是故意的，我只是太在乎你，太怕失去你。</p>
-    <p>你对我来说，是一束光，是我心里的柔软。</p>
-    <p>请给我一次机会，让我继续用温柔和陪伴弥补过错。</p>
-    <p>我愿意，一点点改，一点点靠近你心里最柔软的那部分。</p>
-    <button class="btn" onclick="alert('你原谅我了吗？🥺')">点击原谅我</button>
+
+<div class="hearts"></div>
+
+<div class="container">
+  <h1>亲爱的，对不起</h1>
+  <div class="typewriter">
+    <p>我真的是因为太困了才睡着...</p>
   </div>
+  <button class="btn" onclick="alert('你愿意原谅我吗？❤️')">原谅我吧</button>
+</div>
+
+<!-- 背景音乐 -->
+<audio autoplay loop>
+  <source src="https://cdn.pixabay.com/audio/2022/03/14/audio_cdc3dbe13f.mp3" type="audio/mp3">
+</audio>
+
+<script>
+  // 生成飘落的心
+  function createHeart() {
+    const heart = document.createElement('div');
+    heart.classList.add('heart');
+    heart.style.left = Math.random() * 100 + 'vw';
+    heart.style.top = '100vh';
+    heart.style.animationDuration = (5 + Math.random() * 3) + 's';
+    document.querySelector('.hearts').appendChild(heart);
+
+    setTimeout(() => {
+      heart.remove();
+    }, 8000);
+  }
+
+  setInterval(createHeart, 300);
+</script>
+
 </body>
 </html>
