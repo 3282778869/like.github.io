@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>浪漫烟花</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 配置Tailwind自定义颜色和字体 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FF3366',
+            secondary: '#6C63FF',
+          },
+          fontFamily: {
+            romantic: ['Segoe UI', 'Roboto', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+      }
+      .text-shadow-lg {
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.9);
+      }
+      .bg-gradient-night {
+        background: linear-gradient(135deg, #0B0C10 0%, #1F2833 100%);
+      }
+    }
+  </style>
+  
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      height: 100vh;
+    }
+    
+    #fireworks-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    
+    .overlay {
+      position: relative;
+      z-index: 2;
+      pointer-events: none;
+    }
+    
+    .star {
+      position: absolute;
+      background-color: white;
+      border-radius: 50%;
+      animation: twinkle 2s infinite ease-in-out;
+    }
+    
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    
+    .floating {
+      animation: float 6s infinite ease-in-out;
+    }
+    
+    .heart {
+      position: absolute;
+      color: #FF3366;
+      opacity: 0;
+      animation: heartFloat 4s forwards;
+    }
+    
+    @keyframes heartFloat {
+      0% {
+        transform: translateY(0) scale(0.3);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-100vh) scale(1);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gradient-night">
+  <!-- 星空背景 -->
+  <div id="stars-container"></div>
+  
+  <!-- 烟花画布 -->
+  <canvas id="fireworks-canvas"></canvas>
+  
+  <!-- 文字覆盖层 -->
+  <div class="overlay h-full flex flex-col items-center justify-center text-white p-4">
+    <h1 class="text-[clamp(2rem,5vw,4rem)] font-romantic font-bold text-shadow-lg mb-4 floating">
+      璀璨星空下的浪漫
+    </h1>
+    <p class="text-[clamp(1rem,2vw,1.5rem)] font-romantic text-shadow text-center max-w-2xl floating" style="animation-delay: 1s">
+      每一次绽放，都是心跳的痕迹<br>点击屏幕，让浪漫延续
+    </p>
+    
+    <div class="absolute bottom-8 left-0 right-0 flex justify-center items-center space-x-4">
+      <button id="firework-toggle" class="bg-white/20 backdrop-blur-sm hover:bg-white/30 p-3 rounded-full transition-all duration-300 pointer-events-auto">
+        <i class="fa fa-star text-white text-xl"></i>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 创建星空背景
+    function createStars() {
+      const starsContainer = document.getElementById('stars-container');
+      const starCount = 200; // 增加星星数量
+      
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.classList.add('star');
+        
+        // 随机大小和位置
+        const size = Math.random() * 3 + 1;
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const delay = Math.random() * 5;
+        
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        star.style.left = `${x}%`;
+        star.style.top = `${y}%`;
+        star.style.animationDelay = `${delay}s`;
+        
+        starsContainer.appendChild(star);
+      }
+    }
+    
+    // 烟花效果实现 - 增强版
+    class Firework {
+      constructor(canvas, x, y, hue) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.x = x;
+        this.y = y;
+        this.hue = hue;
+        this.gravity = 0.15; // 减小重力，让烟花更飘逸
+        this.friction = 0.96; // 调整摩擦系数
+        this.particles = [];
+        this.exploded = false;
+        this.color = `hsl(${hue}, 100%, 60%)`;
+        this.hasSparkles = Math.random() > 0.3; // 30%概率有特殊火花效果
+        
+        // 初始发射粒子
+        this.init();
+      }
+      
+      init() {
+        // 创建发射轨迹
+        this.trail = [];
+        this.trailColor = `hsl(${this.hue}, 100%, 70%)`;
+        this.trailLength = 40; // 更长的轨迹
+        this.vx = (Math.random() - 0.5) * 2; // 轻微水平偏移，增加自然感
+        this.vy = -(Math.random() * 5 + 7); // 向上的速度
+        this.currentY = this.canvas.height;
+        this.targetY = this.y;
+      }
+      
+      update() {
+        if (!this.exploded) {
+          // 移动发射轨迹
+          this.vy += this.gravity * 0.3;
+          this.currentY += this.vy;
+          this.x += this.vx;
+          
+          // 添加轨迹点
+          this.trail.push({x: this.x, y: this.currentY, alpha: 1});
+          if (this.trail.length > this.trailLength) {
+            this.trail.shift();
+          }
+          
+          // 轨迹点逐渐消失
+          this.trail.forEach((point, index) => {
+            point.alpha = 1 - (index / this.trailLength);
+          });
+          
+          // 到达目标高度时爆炸
+          if (this.currentY <= this.targetY) {
+            this.explode();
+          }
+        } else {
+          // 更新爆炸粒子
+          for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            
+            p.vy += this.gravity;
+            p.vx *= this.friction;
+            p.vy *= this.friction;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.radius *= p.shrinkRate; // 不同粒子有不同收缩率
+            p.alpha -= p.fadeRate; // 不同粒子有不同淡出率
+            
+            // 特殊火花效果：随机闪烁
+            if (this.hasSparkles && p.isSparkle && Math.random() < 0.1) {
+              p.alpha = 1;
+            }
+            
+            if (p.alpha <= 0 || p.radius <= 0.1) {
+              this.particles.splice(i, 1);
+            }
+          }
+        }
+      }
+      
+      explode() {
+        this.exploded = true;
+        // 增加粒子数量，让爆炸更密集
+        const particleCount = Math.floor(Math.random() * 150) + 120;
+        const explosionType = Math.floor(Math.random() * 3); // 三种爆炸模式
+        
+        for (let i = 0; i < particleCount; i++) {
+          let angle, speed, radius, shrinkRate, fadeRate, isSparkle;
+          
+          // 不同爆炸模式
+          switch(explosionType) {
+            case 0: // 放射状爆炸
+              angle = Math.random() * Math.PI * 2;
+              speed = Math.random() * 7 + 3;
+              break;
+            case 1: // 心形爆炸趋势
+              const baseAngle = Math.random() * Math.PI * 2;
+              const heartFactor = 0.3 * Math.sin(baseAngle * 2);
+              angle = baseAngle + heartFactor;
+              speed = Math.random() * 6 + 2;
+              break;
+            case 2: // 密集型爆炸
+              angle = Math.random() * Math.PI * 2;
+              speed = Math.random() * 5 + 1;
+              break;
+          }
+          
+          // 粒子变化更多样
+          radius = Math.random() * 4 + 1;
+          shrinkRate = 0.96 + Math.random() * 0.03;
+          fadeRate = 0.005 + Math.random() * 0.01;
+          isSparkle = this.hasSparkles && Math.random() < 0.2;
+          
+          this.particles.push({
+            x: this.x,
+            y: this.currentY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: radius,
+            alpha: 1,
+            color: `hsl(${this.hue + (Math.random() * 40 - 20)}, 100%, ${50 + Math.random() * 30}%)`,
+            shrinkRate: shrinkRate,
+            fadeRate: fadeRate,
+            isSparkle: isSparkle
+          });
+        }
+        
+        // 增加爱心出现概率和数量
+        if (Math.random() > 0.5) {
+          this.createHearts();
+        }
+      }
+      
+      createHearts() {
+        const heartCount = Math.floor(Math.random() * 8) + 5; // 更多爱心
+        for (let i = 0; i < heartCount; i++) {
+          const heart = document.createElement('div');
+          heart.classList.add('heart');
+          heart.innerHTML = '<i class="fa fa-heart"></i>';
+          
+          const size = Math.random() * 25 + 15;
+          const angle = Math.random() * Math.PI * 2;
+          const distance = Math.random() * 70 + 40;
+          
+          heart.style.left = `${this.x + Math.cos(angle) * distance}px`;
+          heart.style.top = `${this.currentY + Math.sin(angle) * distance}px`;
+          heart.style.fontSize = `${size}px`;
+          heart.style.animationDuration = `${Math.random() * 3 + 3}s`;
+          // 随机爱心颜色
+          const colors = ['#FF3366', '#FF6B6B', '#FF8E8E', '#FFB5B5'];
+          heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+          
+          document.body.appendChild(heart);
+          
+          // 动画结束后移除
+          setTimeout(() => {
+            heart.remove();
+          }, 6000);
+        }
+      }
+      
+      draw() {
+        if (!this.exploded) {
+          // 绘制发射轨迹，带渐变效果
+          this.ctx.beginPath();
+          this.ctx.moveTo(this.x, this.canvas.height);
+          
+          for (let i = 0; i < this.trail.length; i++) {
+            this.ctx.lineTo(this.trail[i].x, this.trail[i].y);
+          }
+          
+          this.ctx.strokeStyle = this.trailColor;
+          this.ctx.lineWidth = 2;
+          this.ctx.stroke();
+        } else {
+          // 绘制爆炸粒子，增加发光效果
+          for (const p of this.particles) {
+            // 绘制粒子光晕
+            if (p.isSparkle) {
+              this.ctx.beginPath();
+              this.ctx.arc(p.x, p.y, p.radius * 2, 0, Math.PI * 2);
+              this.ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.3})`;
+              this.ctx.fill();
+            }
+            
+            // 绘制粒子本身
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            this.ctx.fillStyle = p.color;
+            this.ctx.globalAlpha = p.alpha;
+            this.ctx.fill();
+            this.ctx.globalAlpha = 1;
+          }
+        }
+      }
+      
+      isDone() {
+        return this.exploded && this.particles.length === 0;
+      }
+    }
+    
+    // 主烟花控制器
+    class FireworksController {
+      constructor() {
+        this.canvas = document.getElementById('fireworks-canvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.fireworks = [];
+        this.autoFire = true;
+        this.resizeCanvas();
+        this.setupEventListeners();
+        this.animate();
+      }
+      
+      resizeCanvas() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+      }
+      
+      setupEventListeners() {
+        // 窗口大小变化
+        window.addEventListener('resize', () => this.resizeCanvas());
+        
+        // 点击屏幕发射烟花 - 点击一次发射多个烟花
+        document.addEventListener('click', (e) => {
+          const count = Math.floor(Math.random() * 3) + 1; // 1-3个烟花
+          for(let i = 0; i < count; i++) {
+            const offsetX = (Math.random() - 0.5) * 100;
+            const hue = Math.random() * 360;
+            this.fireworks.push(new Firework(
+              this.canvas, 
+              e.clientX + offsetX, 
+              Math.random() * (this.canvas.height * 0.5) + 50,
+              hue
+            ));
+          }
+        });
+        
+        // 自动烟花控制
+        const fireworkToggle = document.getElementById('firework-toggle');
+        fireworkToggle.addEventListener('click', () => {
+          this.autoFire = !this.autoFire;
+          if (this.autoFire) {
+            fireworkToggle.innerHTML = '<i class="fa fa-star text-white text-xl"></i>';
+          } else {
+            fireworkToggle.innerHTML = '<i class="fa fa-star-o text-white text-xl"></i>';
+          }
+        });
+      }
+      
+      createRandomFirework() {
+        if (!this.autoFire) return;
+        
+        // 提高自动发射概率，增加烟花频率
+        if (Math.random() < 0.08) { // 从0.02提高到0.08，频率增加4倍
+          const x = Math.random() * this.canvas.width;
+          const y = Math.random() * (this.canvas.height * 0.6) + 30;
+          const hue = Math.random() * 360;
+          this.fireworks.push(new Firework(this.canvas, x, y, hue));
+        }
+        
+        // 偶尔一次发射多个烟花
+        if (Math.random() < 0.02) {
+          const count = Math.floor(Math.random() * 4) + 2; // 2-5个烟花
+          for(let i = 0; i < count; i++) {
+            const x = Math.random() * this.canvas.width * 0.8 + this.canvas.width * 0.1;
+            const y = Math.random() * (this.canvas.height * 0.5) + 50;
+            const hue = Math.random() * 360;
+            this.fireworks.push(new Firework(this.canvas, x, y, hue));
+          }
+        }
+      }
+      
+      animate() {
+        // 清空画布，使用更柔和的叠加效果
+        this.ctx.fillStyle = 'rgba(10, 10, 20, 0.08)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 创建随机烟花
+        this.createRandomFirework();
+        
+        // 更新和绘制所有烟花
+        for (let i = this.fireworks.length - 1; i >= 0; i--) {
+          const firework = this.fireworks[i];
+          firework.update();
+          firework.draw();
+          
+          if (firework.isDone()) {
+            this.fireworks.splice(i, 1);
+          }
+        }
+        
+        requestAnimationFrame(() => this.animate());
+      }
+    }
+    
+    // 初始化
+    window.addEventListener('load', () => {
+      createStars();
+      new FireworksController();
+    });
+  </script>
+</body>
+</html>
