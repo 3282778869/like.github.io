@@ -1,217 +1,232 @@
 <!DOCTYPE html>
 <html lang="zh-Hans">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>终极电影级粒子星球</title>
-  <style>
-      html,body{margin:0;padding:0;height:100%;background:#01040b;overflow:hidden;}
-      canvas{display:block;}
-  </style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>动态蓝色星球 · 呼吸与能量波纹</title>
+    <style>
+        html,body{margin:0;padding:0;height:100%;background:#020611;overflow:hidden;}
+        canvas{display:block;width:100%;height:100%;touch-action:none;}
+    </style>
 </head>
 <body>
 <canvas id="planet"></canvas>
 <script>
-  const canvas = document.getElementById('planet');
-  const ctx = canvas.getContext('2d');
-  let w,h,DPR;
+    const canvas=document.getElementById('planet');
+    const ctx=canvas.getContext('2d');
+    let w,h,DPR;
 
-  function resize(){
-    DPR = window.devicePixelRatio || 1;
-    w = window.innerWidth; h = window.innerHeight;
-    canvas.width = w * DPR; canvas.height = h * DPR;
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-  }
-  resize();
-  window.addEventListener('resize',resize);
-
-  // ====== 星球参数 ======
-  const state = {
-    radius: 220,
-    particleCount: 2500,
-    starsCount: 500,
-    rotationX: -0.3,
-    rotationY: 0.6,
-    autoRotate: 0.0015,
-    zoom: 1,
-    cameraZ: 800,
-    fov: 800,
-  };
-
-  // ====== 粒子生成（径向渐变） ======
-  const colorCenter = {r:58,g:179,b:255};
-  const colorMid    = {r:165,g:90,b:255};
-  const colorEdge   = {r:255,g:105,b:180};
-
-  function genSpherePoints(count, radius){
-    const pts=[];
-    const golden=Math.PI*(3-Math.sqrt(5));
-    for(let i=0;i<count;i++){
-      const y=1-(i/(count-1))*2;
-      const r=Math.sqrt(1-y*y);
-      const theta=golden*i;
-      const x=Math.cos(theta)*r;
-      const z=Math.sin(theta)*r;
-
-      const dist = Math.sqrt(x*x + y*y + z*z)/radius;
-      let color = {r:0,g:0,b:0};
-      if(dist < 0.5){
-        const t = dist/0.5;
-        color.r = colorCenter.r + (colorMid.r - colorCenter.r)*t;
-        color.g = colorCenter.g + (colorMid.g - colorCenter.g)*t;
-        color.b = colorCenter.b + (colorMid.b - colorCenter.b)*t;
-      } else {
-        const t = (dist-0.5)/0.5;
-        color.r = colorMid.r + (colorEdge.r - colorMid.r)*t;
-        color.g = colorMid.g + (colorEdge.g - colorMid.g)*t;
-        color.b = colorMid.b + (colorEdge.b - colorMid.b)*t;
-      }
-
-      pts.push({
-        x:x*radius,
-        y:y*radius,
-        z:z*radius,
-        size:1+Math.random()*2,
-        color:`rgb(${color.r|0},${color.g|0},${color.b|0})`,
-        prevX:0, prevY:0 // 用于拖尾
-      });
+    function resize(){
+        DPR=window.devicePixelRatio||1;
+        w=window.innerWidth;h=window.innerHeight;
+        canvas.width=w*DPR;canvas.height=h*DPR;
+        ctx.setTransform(DPR,0,0,DPR,0,0);
     }
-    return pts;
-  }
-  let particles = genSpherePoints(state.particleCount,state.radius);
+    resize();window.addEventListener('resize',resize);
 
-  // ====== 背景星点 ======
-  let stars=[];
-  for(let i=0;i<state.starsCount;i++){
-    stars.push({
-      x:Math.random()*w,
-      y:Math.random()*h,
-      size:Math.random()*1.8+0.2,
-      alpha:Math.random(),
-      twinkleSpeed:0.005+Math.random()*0.01
+    const state={
+        radius:Math.min(w,h)*0.25,
+        particleCount:w<768?1200:2800,
+        rotationX:-0.25,
+        rotationY:0.5,
+        autoRotate:0.0013,
+        zoom:1,
+        cameraZ:800,
+        fov:800,
+        energyRipples:[],
+        lastRipple:0
+    };
+
+    function lerp(a,b,t){return a+(b-a)*t;}
+    function mixColor(c1,c2,t){
+        return {
+            r:lerp(c1.r,c2.r,t),
+            g:lerp(c1.g,c2.g,t),
+            b:lerp(c1.b,c2.b,t)
+        };
+    }
+    function colorToStr(c,a=1){return `rgba(${c.r|0},${c.g|0},${c.b|0},${a})`}
+
+    // === 颜色组（循环过渡）===
+    const palette=[
+        {r:60,g:130,b:255}, // 蓝
+        {r:90,g:180,b:255}, // 浅蓝
+        {r:150,g:120,b:255}, // 蓝紫
+        {r:80,g:200,b:255}   // 青蓝
+    ];
+    let colorPhase=0;
+
+    // === 生成粒子 ===
+    function genSpherePoints(count,radius){
+        const pts=[],g=Math.PI*(3-Math.sqrt(5));
+        for(let i=0;i<count;i++){
+            const y=1-(i/(count-1))*2;
+            const r=Math.sqrt(1-y*y);
+            const theta=g*i;
+            const x=Math.cos(theta)*r;
+            const z=Math.sin(theta)*r;
+            pts.push({x:x*radius,y:y*radius,z:z*radius,size:1+Math.random()*1.2,color:'white',prevX:0,prevY:0});
+        }
+        return pts;
+    }
+    let particles=genSpherePoints(state.particleCount,state.radius);
+    let stars=Array.from({length:250},()=>({
+        x:Math.random()*w,y:Math.random()*h,
+        size:Math.random()*1.6+0.3,
+        alpha:Math.random(),twinkleSpeed:0.004+Math.random()*0.008
+    }));
+
+    function project(x,y,z){
+        const scale=state.fov/(state.fov+(z+state.cameraZ));
+        return {x:x*scale*state.zoom,y:y*scale*state.zoom,scale};
+    }
+
+    // === 交互 ===
+    let dragging=false,lastX=0,lastY=0,pinchDist=0;
+    canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;});
+    window.addEventListener('pointermove',e=>{
+        if(!dragging)return;
+        const dx=e.clientX-lastX,dy=e.clientY-lastY;
+        lastX=e.clientX;lastY=e.clientY;
+        state.rotationY+=dx*0.005;
+        state.rotationX+=dy*0.005;
     });
-  }
+    window.addEventListener('pointerup',()=>dragging=false);
+    canvas.addEventListener('touchstart',e=>{
+        if(e.touches.length===2){
+            const dx=e.touches[0].clientX-e.touches[1].clientX;
+            const dy=e.touches[0].clientY-e.touches[1].clientY;
+            pinchDist=Math.sqrt(dx*dx+dy*dy);
+        }
+    },{passive:false});
+    canvas.addEventListener('touchmove',e=>{
+        if(e.touches.length===2){
+            const dx=e.touches[0].clientX-e.touches[1].clientX;
+            const dy=e.touches[0].clientY-e.touches[1].clientY;
+            const newDist=Math.sqrt(dx*dx+dy*dy);
+            const delta=(newDist-pinchDist)*0.002;
+            pinchDist=newDist;
+            state.zoom=Math.min(2.5,Math.max(0.5,state.zoom+delta));
+        }
+    },{passive:false});
+    canvas.addEventListener('wheel',e=>{
+        e.preventDefault();
+        state.zoom=Math.min(2.5,Math.max(0.5,state.zoom-e.deltaY*0.001));
+    },{passive:false});
 
-  // ====== 鼠标交互 ======
-  let dragging=false,lastX=0,lastY=0;
-  canvas.addEventListener('pointerdown',e=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; });
-  window.addEventListener('pointermove',e=>{
-    if(!dragging)return;
-    let dx=e.clientX-lastX, dy=e.clientY-lastY;
-    lastX=e.clientX; lastY=e.clientY;
-    state.rotationY+=dx*0.005;
-    state.rotationX+=dy*0.005;
-  });
-  window.addEventListener('pointerup',()=>dragging=false);
-  canvas.addEventListener('wheel',e=>{
-    e.preventDefault();
-    state.zoom = Math.min(2.2, Math.max(0.4, state.zoom - e.deltaY*0.001));
-  },{passive:false});
+    // === 动画主循环 ===
+    function draw(time){
+        ctx.fillStyle='rgba(2,6,17,0.25)';
+        ctx.fillRect(0,0,w,h);
+        const cx=w/2,cy=h/2;
 
-  // ====== 投影函数 ======
-  function project(x,y,z){
-    const scale=state.fov/(state.fov+(z+state.cameraZ));
-    return {x:x*scale*state.zoom, y:y*scale*state.zoom, scale};
-  }
+        // 动态颜色过渡
+        const colorIndex=Math.floor(colorPhase)%palette.length;
+        const nextIndex=(colorIndex+1)%palette.length;
+        const t=colorPhase-Math.floor(colorPhase);
+        const colorBase=mixColor(palette[colorIndex],palette[nextIndex],t);
+        colorPhase+=0.0015; // 控制颜色变化速度
 
-  // ====== 动画循环 ======
-  function draw(){
-    // 半透明覆盖保留尾迹
-    ctx.fillStyle='rgba(1,4,11,0.2)';
-    ctx.fillRect(0,0,w,h);
+        const cosY=Math.cos(state.rotationY),sinY=Math.sin(state.rotationY);
+        const cosX=Math.cos(state.rotationX),sinX=Math.sin(state.rotationX);
+        if(!dragging)state.rotationY+=state.autoRotate;
 
-    const cx=w/2, cy=h/2;
-    const cosY=Math.cos(state.rotationY), sinY=Math.sin(state.rotationY);
-    const cosX=Math.cos(state.rotationX), sinX=Math.sin(state.rotationX);
+        // 星光背景
+        for(let s of stars){
+            s.alpha+=(Math.random()-0.5)*s.twinkleSpeed;
+            s.alpha=Math.max(0.1,Math.min(1,s.alpha));
+            ctx.globalAlpha=s.alpha;
+            ctx.fillStyle='white';
+            ctx.beginPath();
+            ctx.arc(s.x,s.y,s.size,0,Math.PI*2);
+            ctx.fill();
+        }
 
-    if(!dragging) state.rotationY+=state.autoRotate;
-
-    // 背景星光闪烁
-    ctx.save();
-    for(let s of stars){
-      s.alpha += (Math.random()-0.5)*s.twinkleSpeed;
-      s.alpha = Math.max(0.1, Math.min(1, s.alpha));
-      ctx.globalAlpha = s.alpha;
-      ctx.fillStyle = 'white';
-      ctx.beginPath();
-      ctx.arc(s.x,s.y,s.size,0,Math.PI*2);
-      ctx.fill();
-    }
-    ctx.restore();
-
-    // 计算粒子位置
-    let rendered=[];
-    for(let p of particles){
-      let x=p.x*cosY - p.z*sinY;
-      let z=p.x*sinY + p.z*cosY;
-      let y=p.y*cosX - z*sinX;
-      z=p.y*sinX + z*cosX;
-      const proj=project(x,y,z);
-      rendered.push({p, sx:cx+proj.x, sy:cy+proj.y, s:proj.scale, depth:z});
-    }
-    rendered.sort((a,b)=>a.depth-b.depth);
-
-    // 三色光晕动态闪烁
-    const t = (Math.sin(Date.now()/1000)+1)/2;
-    const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,state.radius*1.8);
-    grad.addColorStop(0,`rgba(58,179,255,${0.3+t*0.2})`);
-    grad.addColorStop(0.4,`rgba(165,90,255,${0.25+t*0.15})`);
-    grad.addColorStop(0.7,`rgba(255,105,180,${0.2+t*0.1})`);
-    grad.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle=grad;
-    ctx.beginPath();
-    ctx.arc(cx,cy,state.radius*1.8,0,Math.PI*2);
-    ctx.fill();
-
-    // 绘制粒子 + 拖尾渐变
-    for(let r of rendered){
-      const alpha = Math.max(0.2, r.s);
-
-      // 拖尾渐变
-      if(r.p.prevX && r.p.prevY){
-        const trail = ctx.createLinearGradient(r.sx,r.sy,r.p.prevX,r.p.prevY);
-        trail.addColorStop(0,r.p.color);
-        trail.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.strokeStyle = trail;
-        ctx.lineWidth = r.p.size*r.s*1.2;
+        // 星球柔光呼吸
+        const breathe=0.6+Math.sin(time*0.001)*0.25;
+        const grad=ctx.createRadialGradient(cx,cy,0,cx,cy,state.radius*1.8);
+        grad.addColorStop(0,colorToStr(colorBase,0.25*breathe));
+        grad.addColorStop(0.5,colorToStr(colorBase,0.18*breathe));
+        grad.addColorStop(1,'rgba(0,0,0,0)');
+        ctx.globalAlpha=1;
+        ctx.fillStyle=grad;
         ctx.beginPath();
-        ctx.moveTo(r.sx,r.sy);
-        ctx.lineTo(r.p.prevX,r.p.prevY);
-        ctx.stroke();
-      }
+        ctx.arc(cx,cy,state.radius*1.8,0,Math.PI*2);
+        ctx.fill();
 
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle=r.p.color;
-      ctx.beginPath();
-      ctx.arc(r.sx,r.sy,r.p.size*r.s*1.6,0,Math.PI*2);
-      ctx.fill();
+        // 能量波纹
+        if(time-state.lastRipple>2800){
+            state.energyRipples.push({radius:state.radius*0.5,alpha:0.5});
+            state.lastRipple=time;
+        }
+        for(let r of state.energyRipples){
+            r.radius+=3;
+            r.alpha-=0.004;
+            if(r.alpha<=0)continue;
+            const rippleGrad=ctx.createRadialGradient(cx,cy,r.radius*0.6,cx,cy,r.radius);
+            rippleGrad.addColorStop(0,colorToStr(colorBase,r.alpha));
+            rippleGrad.addColorStop(1,'rgba(0,0,0,0)');
+            ctx.fillStyle=rippleGrad;
+            ctx.beginPath();
+            ctx.arc(cx,cy,r.radius,0,Math.PI*2);
+            ctx.fill();
+        }
+        state.energyRipples=state.energyRipples.filter(r=>r.alpha>0);
 
-      r.p.prevX = r.sx;
-      r.p.prevY = r.sy;
+        // 粒子
+        const rendered=particles.map(p=>{
+            let x=p.x*cosY-p.z*sinY;
+            let z=p.x*sinY+p.z*cosY;
+            let y=p.y*cosX-z*sinX;
+            z=p.y*sinX+z*cosX;
+            const proj=project(x,y,z);
+            p.color=colorToStr(colorBase,0.9);
+            return {p,sx:cx+proj.x,sy:cy+proj.y,s:proj.scale,depth:z};
+        }).sort((a,b)=>a.depth-b.depth);
+
+        for(let r of rendered){
+            if(r.p.prevX&&r.p.prevY){
+                const trail=ctx.createLinearGradient(r.sx,r.sy,r.p.prevX,r.p.prevY);
+                trail.addColorStop(0,r.p.color);
+                trail.addColorStop(1,'rgba(0,0,0,0)');
+                ctx.strokeStyle=trail;
+                ctx.lineWidth=r.p.size*r.s*1.2;
+                ctx.beginPath();
+                ctx.moveTo(r.sx,r.sy);
+                ctx.lineTo(r.p.prevX,r.p.prevY);
+                ctx.stroke();
+            }
+            ctx.globalAlpha=0.9;
+            ctx.fillStyle=r.p.color;
+            ctx.beginPath();
+            ctx.arc(r.sx,r.sy,r.p.size*r.s*1.4,0,Math.PI*2);
+            ctx.fill();
+            r.p.prevX=r.sx;r.p.prevY=r.sy;
+        }
+
+        // 动态星环
+        ctx.save();
+        ctx.translate(cx,cy);
+        const baseRot=state.rotationY*0.6;
+        for(let i=0;i<3;i++){
+            const rot=baseRot+(i*0.6);
+            ctx.rotate(rot);
+            const ringGrad=ctx.createRadialGradient(0,0,state.radius*0.2,0,0,state.radius*(1.5+i*0.25));
+            ringGrad.addColorStop(0,colorToStr(colorBase,0.15*breathe));
+            ringGrad.addColorStop(0.6,colorToStr(colorBase,0.08*breathe));
+            ringGrad.addColorStop(1,'rgba(0,0,0,0)');
+            ctx.strokeStyle=ringGrad;
+            ctx.globalAlpha=0.6-(i*0.15);
+            ctx.lineWidth=1.5+i*0.4;
+            ctx.beginPath();
+            ctx.ellipse(0,0,state.radius*(1.4+i*0.3),state.radius*(0.35+i*0.05),0,0,Math.PI*2);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        requestAnimationFrame(draw);
     }
-
-    // 星环渐变发光
-    ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(state.rotationY*0.6);
-    const ringGrad = ctx.createRadialGradient(0,0,state.radius*0.2,0,0,state.radius*2);
-    ringGrad.addColorStop(0,'rgba(100,160,255,0.15)');
-    ringGrad.addColorStop(0.5,'rgba(165,90,255,0.08)');
-    ringGrad.addColorStop(1,'rgba(255,105,180,0)');
-    ctx.strokeStyle=ringGrad;
-    ctx.lineWidth=2;
-    ctx.globalAlpha=0.8;
-    ctx.beginPath();
-    ctx.ellipse(0,0,state.radius*1.8,state.radius*0.35,0,0,Math.PI*2);
-    ctx.stroke();
-    ctx.restore();
-
-    // 相机轻微摇摆
-    state.rotationX += Math.sin(Date.now()/3000)*0.00004;
-
     requestAnimationFrame(draw);
-  }
-  draw();
 </script>
 </body>
 </html>
